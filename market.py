@@ -7,8 +7,7 @@ class Market:
     api_key:str
     api_secret:str
     binance_client:Client()
-    TRADING_PAIR:str
-    
+    TRADING_PAIR:str    
 
 
 
@@ -23,20 +22,32 @@ class Market:
 
     def getState(self , timestamp):
         state = self.a_2min_of_1min_candles(timestamp=timestamp)
-        return state 
+        return state[0] 
 
-    def execute_agent_action(self,action,timestamp):
-            if(action[1]==1):
-                self.wallet.buy(self.TRADING_PAIR,action[0],self.price_at_time(timestamp))
-            if(action[1]==-1):
-                self.wallet.sell(self.TRADING_PAIR,action[0],self.price_at_time(timestamp))
+    def execute(self,actions,timestamp , report):
+        # actions = [(ammount ,  sell_close_buy (-1,0,1) , is_market , is_futures , limit , leverage),(ammount ,   sell_hold_buy (-1,0,1) , is_market , is_futures , limit , leverage)]
+        if len(actions) > 0:
+            for action in actions:
+                if action[1] == 1 and action[3] == False:
+                    self.wallet.buy( action[0] , action[4] , report )
+
+                if action[1] == -1 and action[3] == False:
+                    self.wallet.sell( action[0] , action[4] , report )
+
+                if action[1] == 1 and  action[3] == True:
+                    self.wallet.long(action[0] , action[4] , action[5] , report)
+
+                if action[1] == -1 and  action[3] == True:
+                    self.wallet.short(action[0] , action[4] , action[5] , report)
+
+                
 
 
     def a_2min_of_1min_candles(self, timestamp):
-        five_min_ago= int(timestamp - 2*60)
+        two_minutes_later= int(timestamp + 2*60)
 
-        time1= datetime.fromtimestamp(five_min_ago, tz=None)
-        time2= datetime.fromtimestamp(timestamp, tz=None)
+        time1= datetime.fromtimestamp(timestamp, tz=None)
+        time2= datetime.fromtimestamp(two_minutes_later, tz=None)
         
         date1=time1.strftime("%d %b, %Y %H:%M:%S")
         date2=time2.strftime("%d %b, %Y %H:%M:%S")
