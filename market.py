@@ -20,14 +20,16 @@ class Market:
         self.wallet=wallet
 
 
-    def getState(self , timestamp):
+    def getState(self , timestamp, report):
         state = self.a_2min_of_1min_candles(timestamp=timestamp)
+        report.add_candle(timestamp,state[0] )
         return state[0] 
 
     def execute(self,actions,timestamp , report):
         # actions = [(ammount ,  sell_close_buy (-1,0,1) , is_market , is_futures , limit , leverage),(ammount ,   sell_hold_buy (-1,0,1) , is_market , is_futures , limit , leverage)]
         if len(actions) > 0:
             for action in actions:
+                print(action)
                 if action[1] == 1 and action[3] == False:
                     self.wallet.buy( action[0] , action[4] , report )
 
@@ -40,8 +42,8 @@ class Market:
                 if action[1] == -1 and  action[3] == True:
                     self.wallet.short(action[0] , action[4] , action[5] , report)
 
-                
-
+        report.signals_refine()
+     
 
     def a_2min_of_1min_candles(self, timestamp):
         two_minutes_later= int(timestamp + 2*60)

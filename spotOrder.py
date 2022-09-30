@@ -17,12 +17,21 @@ class SpotOrder:
 
 
     def max_above_openning_high(self , state):
+        if self.openning_price_high is None:
+            return False
+
+        print(f'{float(state[2])} > {self.openning_price_high}')
         if float(state[2]) > self.openning_price_high:
             return True
         else:
             return False
         
     def min_below_openning_low(self , state):
+        
+        if self.openning_price_low is None:
+            return False
+        
+        print(f'{float(state[3])} > {self.openning_price_high}')
         if float(state[3]) < self.openning_price_low:
             return True
         else:
