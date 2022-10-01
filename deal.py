@@ -26,6 +26,17 @@ class Deal:
             self.pnl_percentage = pnl_percentage
             self.is_a_winning_deal = is_a_winning_deal
 
+    def close(self , closing_time, closing_price , closing_wallet_worth ):
+            self.closing_time = closing_time
+            self.closing_price = closing_price
+            self.closing_wallet_worth = closing_wallet_worth
+            self.pnl = self.openning_wallet_worth - self.closing_wallet_worth
+            self.pnl_percentage = self.pnl / self.openning_wallet_worth
+            self.is_a_winning_deal = True if self.pnl>0 else False
+
+
+
+
         
 
 
