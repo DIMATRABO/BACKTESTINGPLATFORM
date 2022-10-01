@@ -29,10 +29,10 @@ class Report:
             self.liquidation_signals.append(price)
         if buy_close_sell == 1 and not is_futures:
             self.buy_signals.append(price)
-        
+
         if buy_close_sell == 1 and is_futures:
             self.long_signals.append(price)
-        if buy_close_sell == 1 and is_futures:
+        if buy_close_sell == -1 and is_futures:
             self.short_signals.append(price)
 
     def signals_refine(self):
@@ -41,6 +41,12 @@ class Report:
             self.buy_signals.append(np.nan)
         if len(self.sell_signals) < max:
             self.sell_signals.append(np.nan)
+
+        if len(self.long_signals) < max:
+            self.long_signals.append(np.nan)
+        if len(self.short_signals) < max:
+            self.short_signals.append(np.nan)
+        
         if len(self.liquidation_signals) < max:
             self.liquidation_signals.append(np.nan)
         
@@ -67,10 +73,19 @@ class Report:
         apds = [ ]
         if np.nansum(self.buy_signals) > 0 :
             apds.append(mpf.make_addplot(self.buy_signals,type='scatter',markersize=100,marker='^'))
+        
         if np.nansum(self.sell_signals) > 0 :
             apds.append(mpf.make_addplot(self.sell_signals,type='scatter',markersize=100,marker='v',color='orange'))
+
+        if np.nansum(self.long_signals) > 0 :
+            apds.append(mpf.make_addplot(self.long_signals,type='scatter',markersize=100,marker='^' , color='green'))
+
+        if np.nansum(self.short_signals) > 0 :
+            apds.append(mpf.make_addplot(self.short_signals,type='scatter',markersize=100,marker='v' , color='violet'))
+
+
         if np.nansum(self.liquidation_signals) > 0 :
-            apds.append(mpf.make_addplot(self.liquidation_signals,type='scatter',markersize=100,marker='v'))
+            apds.append(mpf.make_addplot(self.liquidation_signals,type='scatter',markersize=100,marker='v',color='red'))
 
 
 
@@ -87,9 +102,20 @@ class Report:
         print(len(self.sell_signals))
         print(np.nansum(self.sell_signals))
 
+        print("----- long --------")
+        print(self.long_signals)
+        print(len(self.long_signals))
+        print(np.nansum(self.long_signals))
+
+        print("----- short --------")
+        print(self.short_signals)
+        print(len(self.short_signals))
+        print(np.nansum(self.short_signals))
+
         print("----- LIQUIDATED --------")
         print(self.liquidation_signals)
         print(len(self.liquidation_signals))
         print(np.nansum(self.liquidation_signals))
+
 
 

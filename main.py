@@ -11,15 +11,15 @@ TIME_STEP = 1  * 60 # on minuts
 TRADING_PAIR="ETHUSDT"
 IS_VIRTUAL_ENV=True
 IS_HISTORICAL_DATA=True
-HISTO_START=1661660110 # timestap to start backtesting from
-HISTO_END = 1661672941 # timestap to stop backtestingmarket
+HISTO_START=1664437575 # timestap to start backtesting from
+HISTO_END = 1664438375 # timestap to stop backtestingmarket
 CURRENT_TIME = HISTO_START
 USDT_DISPO = 10000
 COIN_DISPO = 0
-FUTURES_BUDGET = 10000 #USDT
+FUTURES_BUDGET = 2000 #USDT
 
 SLIPPAGE = 0.01 # %
-LEVERAGE = 1 # %
+LEVERAGE = 15 # %
  
 FUTURES_ENTRY_PRICE = 1000 # USDT
 FUTURES_ENTRY_AMOUNT = 10 # COIN
@@ -36,7 +36,7 @@ WALLET_EXCHANGE_FEE = 0.01 #USDT
 
 def run_epoc( timestamp  , market , agent , wallet  ,report):
         state =  market.getState(timestamp, report)
-     
+        print(state)
         wallet.liquidation(state[3] , state[2] , report)
         actions = agent.action( state )
         market.execute(actions , timestamp , report)

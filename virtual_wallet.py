@@ -10,6 +10,8 @@ class Wallet:
     FUTURES_FREE : float
     FUTURES_IN_OERDER: int
     futures_open_orders = List[FuturesOrder] # Same Trading Pair
+
+    liquidation_price = float
  
 
     def __init__(self, TRADING_PAIR, USDT_DISPO , COIN_DISPO,FUTURES_FREE , SLIPPAGE , FEES):
@@ -24,56 +26,99 @@ class Wallet:
         self.SLIPPAGE = SLIPPAGE
         self.FEES = FEES
 
+        self.liquidation_price = self.liquidation_price_calc()
+
 
     def worth(self, trading_coin_value):
         ## must  be called after removing the liquidated positions ( )
-        return self.USDT_DISPO + self.COIN_DISPO * trading_coin_value + self.FUTURES_FREE + self.futures_worth(trading_coin_value=trading_coin_value)
+        return self.USDT_DISPO + self.COIN_DISPO * trading_coin_value  + self.futures_worth(trading_coin_value=trading_coin_value) + self.FUTURES_FREE
     
 
     def futures_worth(self , trading_coin_value):
         # must remove the lown interest 
-        futures_worth = 0
+        futures_worth = self.FUTURES_FREE
         for order in self.futures_open_orders:
             if order.is_long:
                 futures_worth += order.openning_amount * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage
             else:
                 futures_worth -= order.openning_amount * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage
+        print(f"future worth = {futures_worth}")
         return futures_worth
 
-    
-    def liquidation(self, trading_coin_value_min , trading_coin_value_max , Report):
-        if  self.FUTURES_IN_OERDER>0 and  self.futures_worth(trading_coin_value=trading_coin_value_min)<=0 :
-            self.futures_open_orders.clear()
-            Report.trace("LIQUIDATED")
-            self.FUTURES_IN_OERDER = 0
-            Report.trace(len(self.futures_open_orders))
-            Report.signals(True , 0 ,trading_coin_value_min)
-        if  self.FUTURES_IN_OERDER>0 and self.futures_worth(trading_coin_value=trading_coin_value_max)<=0 :
-            self.futures_open_orders.clear()
-            Report.trace("LIQUIDATED")
-            self.FUTURES_IN_OERDER = 0
-            Report.trace(len(self.futures_open_orders))
-            Report.signals( True , 0  , trading_coin_value_max)
-
-
-    def liquidation_price(self):
-        
-        # Lp = ( sum(amount(i) * leverage(i)) / sum( amount(i) * leverage(i) / openingP(i)))
-
-        uper_therm = 0
-        lower_therm  = 0
-
+    def sum_futures_amounts(self):
+        futures_amounts = 0
         for order in self.futures_open_orders:
             if order.is_long:
-                uper_therm += order.openning_amount * order.leverage
-                lower_therm += order.openning_amount * order.leverage / order.openning_price
+                futures_amounts -= order.openning_amount 
             else:
-                uper_therm -= order.openning_amount * order.leverage
-                lower_therm -= order.openning_amount * order.leverage / order.openning_price
+                futures_amounts += order.openning_amount 
+        return futures_amounts
+
+    
+    
+    def liquidation_price_calc(self):
+        # Lp = ( sum(amount(i) * leverage(i)) / sum( amount(i) * leverage(i) / openingP(i)))
+        uper_therm = 1
+        lower_therm  = 0
+        for order in self.futures_open_orders:
+            if order.is_long:
+                uper_therm -=  order.leverage
+                lower_therm += order.leverage / order.openning_price       
+            else:
+                uper_therm += order.leverage
+                lower_therm -=  order.leverage / order.openning_price
+    
+        
         if lower_therm !=0:
-            return uper_therm/lower_therm
+            print(f"liquidation calcul = ({uper_therm}) / {lower_therm}")
+            return -(uper_therm)/lower_therm
         else:
             return 0
+
+
+    def pnl_percentage(self , price):
+        sum_  = 0
+        for order in self.futures_open_orders:
+            if order.is_long:
+                sum_ += order.leverage * (float(price) - order.openning_price)/order.openning_price    
+            else:
+                sum_ += order.leverage * (order.openning_price - float(price) )/order.openning_price    
+    
+        return sum_
+
+
+
+    def liquidation(self, trading_coin_value_min , trading_coin_value_max , Report):
+        print (f" pnl futures = {self.pnl_percentage(trading_coin_value_min)} and {self.pnl_percentage(trading_coin_value_max)} ")
+        if  self.FUTURES_IN_OERDER>0 and  self.pnl_percentage(trading_coin_value_min)<=-1 :
+            self.futures_open_orders.clear()
+            Report.trace("LIQUIDATED")
+            self.FUTURES_IN_OERDER = 0
+            self.liquidation_price = -1
+            Report.trace(len(self.futures_open_orders))
+            Report.signals(True , 0 ,trading_coin_value_min)
+
+        if  self.FUTURES_IN_OERDER>0 and self.pnl_percentage(trading_coin_value_max)<=-1 :
+            self.futures_open_orders.clear()
+            Report.trace("LIQUIDATED")
+            self.FUTURES_IN_OERDER = 0
+            self.liquidation_price = -1
+            Report.trace(len(self.futures_open_orders))
+            Report.signals( True , 0  , trading_coin_value_max)
+            
+
+
+
+
+
+
+    def liquidation_price_price(self,is_long, price , leverage , fee):
+        # fee should be between 0 and 1 
+        if is_long :
+            return price*( 1 - (1 - fee)/leverage)
+        else :
+            return price *( 1 + (1 - fee)/leverage) 
+
 
 
 
@@ -112,7 +157,7 @@ class Wallet:
             self.futures_open_orders.append( FuturesOrder(True , True , execution_price , amount , leverage=leverage ))
             self.FUTURES_FREE -= amount * execution_price + self.FEES
             self.FUTURES_IN_OERDER += 1
-            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price()}")  
+            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price_calc()} ---> {self.liquidation_price}")  
             Report.signals(True , 1 , price)
             return execution_price          
         else:
@@ -126,7 +171,7 @@ class Wallet:
             self.futures_open_orders.append( FuturesOrder(False , True , execution_price , amount , leverage=leverage ))
             self.FUTURES_FREE -= amount * execution_price + self.FEES
             self.FUTURES_IN_OERDER += 1
-            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER}")  
+            Report.trace(f"short -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price_calc()} ---> {self.liquidation_price}")  
             Report.signals( True , -1 , price)
             return execution_price          
         else:
