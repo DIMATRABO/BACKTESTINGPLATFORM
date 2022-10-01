@@ -25,7 +25,7 @@ class OpenOrder:
         if self.openning_price_high is None:
             return False
 
-        if float(state[2]) > self.openning_price_high:
+        if float(state[2]) >= self.openning_price_high:
             return True
         else:
             return False
@@ -35,7 +35,7 @@ class OpenOrder:
         if self.openning_price_low is None:
             return False
         
-        if float(state[3]) < self.openning_price_low:
+        if float(state[3]) <= self.openning_price_low:
             return True
         else:
             return False

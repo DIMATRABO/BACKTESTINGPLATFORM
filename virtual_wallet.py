@@ -31,11 +31,13 @@ class Wallet:
 
     def worth(self, trading_coin_value):
         ## must  be called after removing the liquidated positions ( )
+        trading_coin_value = float(trading_coin_value)
         return self.USDT_DISPO + self.COIN_DISPO * trading_coin_value  + self.futures_worth(trading_coin_value=trading_coin_value) + self.FUTURES_FREE
     
 
     def futures_worth(self , trading_coin_value):
         # must remove the lown interest 
+        trading_coin_value = float(trading_coin_value)
         futures_worth = self.FUTURES_FREE
         for order in self.futures_open_orders:
             if order.is_long:
@@ -115,9 +117,9 @@ class Wallet:
     def liquidation_price_price(self,is_long, price , leverage , fee):
         # fee should be between 0 and 1 
         if is_long :
-            return price*( 1 - (1 - fee)/leverage)
+            return float(price)*( 1 - (1 - fee)/leverage)
         else :
-            return price *( 1 + (1 - fee)/leverage) 
+            return float(price) *( 1 + (1 - fee)/leverage) 
 
 
 
@@ -166,6 +168,7 @@ class Wallet:
         
 
     def short(self , amount , price , leverage , Report):
+        price = float(price)
         execution_price = price * ( 1 + random.randrange(-1, 1) *  random.random() * self.SLIPPAGE )
         if( self.FUTURES_FREE >= amount * execution_price + self.FEES):
             self.futures_open_orders.append( FuturesOrder(False , True , execution_price , amount , leverage=leverage ))

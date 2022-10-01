@@ -22,7 +22,14 @@ SLIPPAGE = 0.01 # %
 LEVERAGE = 15 # %
  
 FUTURES_ENTRY_PRICE = 1000 # USDT
-FUTURES_ENTRY_AMOUNT = 10 # COIN
+FUTURES_ENTRY_AMOUNT = 1 # COIN
+SPOT_ENTRY_AMOUNT = 1
+
+SPOT_ENTRY_PRICE_percentage = 0.5
+SPOT_SELL_PRICE_percentage = 0.4
+
+profitable_percentage = 0.25 #%
+
 
 ENTRY_PRICE = 1633.8
 ENTRY_AMOUNT = 1
@@ -45,7 +52,8 @@ def run_epoc( timestamp  , market , agent , wallet  ,report):
         
 wallet=Wallet(TRADING_PAIR=TRADING_PAIR,USDT_DISPO=USDT_DISPO,COIN_DISPO=COIN_DISPO,FUTURES_FREE=FUTURES_BUDGET, SLIPPAGE=SLIPPAGE , FEES=WALLET_EXCHANGE_FEE )
 market=Market(TRADING_PAIR=TRADING_PAIR, wallet=wallet)
-agent=Agent(wallet = wallet, ENTRY_PRICE_HIGH=1630 ,ENTRY_PRICE_LOW=1620 , ENTRY_AMOUNT = ENTRY_AMOUNT)
+agent=Agent(wallet = wallet, FUTURES_ENTRY_AMOUNT=FUTURES_ENTRY_AMOUNT , SPOT_ENTRY_AMOUNT=SPOT_ENTRY_AMOUNT , SPOT_ENTRY_PRICE_percentage=SPOT_ENTRY_PRICE_percentage , SPOT_SELL_PRICE_percentage= SPOT_SELL_PRICE_percentage , profitable_percentage = profitable_percentage , leverage=LEVERAGE)
+        
 report=Report()
 
 
