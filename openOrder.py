@@ -39,3 +39,6 @@ class OpenOrder:
             return True
         else:
             return False
+
+    def to_string(self):
+        return f'is_buy : {self.is_buy} is_future: {self.is_future} openning_price_high:{self.openning_price_high} openning_price_low:{self.min_below_openning_low} openning_amount:{self.openning_amount}'

@@ -13,20 +13,24 @@ class Report:
     short_signals = []
     liquidation_signals=[]
 
-    def __init__(self ):
+    def __init__(self , debug ):
         self.candles = []
         self.buy_signals = []
+        self.debug = debug
 
     def trace(self ,message):
-        print(message)
+        if self.debug:
+            print(message)
 
 
     def signals(self,is_futures ,  buy_close_sell, price):
         price = float(price)
         if buy_close_sell == -1 and not is_futures:
             self.sell_signals.append(price)
+
         if buy_close_sell == 0 :
             self.liquidation_signals.append(price)
+
         if buy_close_sell == 1 and not is_futures:
             self.buy_signals.append(price)
 
@@ -64,13 +68,17 @@ class Report:
 
 
 
-    def plot(self):
+    def plot(self  , agent):
           
         df = pd.DataFrame(self.candles)
         df.rename(columns = {0:'Date', 1:'Open',2:'High' , 3:'Low', 4:'Close', 5:'Volume'}, inplace = True)
         df['Date'] = pd.to_datetime(df['Date']) 
         df = df.set_index('Date')
         apds = [ ]
+
+        if np.nansum(self.liquidation_signals) > 0 :
+            apds.append(mpf.make_addplot(self.liquidation_signals,type='scatter',markersize=300,marker='v',color='red'))
+
         if np.nansum(self.buy_signals) > 0 :
             apds.append(mpf.make_addplot(self.buy_signals,type='scatter',markersize=100,marker='^'))
         
@@ -84,38 +92,46 @@ class Report:
             apds.append(mpf.make_addplot(self.short_signals,type='scatter',markersize=100,marker='v' , color='violet'))
 
 
-        if np.nansum(self.liquidation_signals) > 0 :
-            apds.append(mpf.make_addplot(self.liquidation_signals,type='scatter',markersize=100,marker='v',color='red'))
+        if self.debug:      
+            print("----- buy --------")
+            print(self.buy_signals)
+            print(len(self.buy_signals))
+            print(np.nansum(self.buy_signals))
 
+            print("----- SELL --------")
+            print(self.sell_signals)
+            print(len(self.sell_signals))
+            print(np.nansum(self.sell_signals))
+
+            print("----- long --------")
+            print(self.long_signals)
+            print(len(self.long_signals))
+            print(np.nansum(self.long_signals))
+
+            print("----- short --------")
+            print(self.short_signals)
+            print(len(self.short_signals))
+            print(np.nansum(self.short_signals))
+
+            print("----- LIQUIDATED --------")
+            print(self.liquidation_signals)
+            print(len(self.liquidation_signals))
+            print(np.nansum(self.liquidation_signals))
+
+
+        print("__________________________________ Deals recap _______________________________________")
+        print("_____________________________________________________________________________")
+        print("__openning wallet worth __ closing wallet worth _____PNL______PNL % _____is winnig_")
+        for deal in agent.deals:
+            print(deal.to_string())
 
 
         #mpf.plot(df, type="candle",   title = f" Price",  style="yahoo"  , hlines=dict( hlines=[1633.8,1620],colors=['g','r'],linestyle='-.') ,addplot=apds )
         mpf.plot(df, type="candle", tight_layout = True ,   title = f" Price",  style="yahoo" ,addplot=apds )
-       
-        print("----- buy --------")
-        print(self.buy_signals)
-        print(len(self.buy_signals))
-        print(np.nansum(self.buy_signals))
+        
 
-        print("----- SELL --------")
-        print(self.sell_signals)
-        print(len(self.sell_signals))
-        print(np.nansum(self.sell_signals))
 
-        print("----- long --------")
-        print(self.long_signals)
-        print(len(self.long_signals))
-        print(np.nansum(self.long_signals))
 
-        print("----- short --------")
-        print(self.short_signals)
-        print(len(self.short_signals))
-        print(np.nansum(self.short_signals))
-
-        print("----- LIQUIDATED --------")
-        print(self.liquidation_signals)
-        print(len(self.liquidation_signals))
-        print(np.nansum(self.liquidation_signals))
 
 
 

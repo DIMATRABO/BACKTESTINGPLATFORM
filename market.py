@@ -29,7 +29,7 @@ class Market:
         # actions = [(ammount ,  sell_close_buy (-1,0,1) , is_market , is_futures , limit , leverage),(ammount ,   sell_hold_buy (-1,0,1) , is_market , is_futures , limit , leverage)]
         if len(actions) > 0:
             for action in actions:
-                print(action)
+                
                 if action[1] == 1 and action[3] == False:
                     self.wallet.buy( action[0] , action[4] , report )
 
@@ -61,7 +61,6 @@ class Market:
         time1= datetime.fromtimestamp(a_minute_ago, tz=None)
         time2= datetime.fromtimestamp(t, tz=None)
         date1=time1.strftime("%d %b, %Y %H:%M:%S")
-        print(date1)
         date2=time2.strftime("%d %b, %Y %H:%M:%S")
         candle=self.binance_client.get_historical_klines(self.TRADING_PAIR, Client.KLINE_INTERVAL_1MINUTE,str(date1),str(date2))
         return (float(candle[0][1])+float(candle[0][4]))/2
