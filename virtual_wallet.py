@@ -10,7 +10,6 @@ class Wallet:
     FUTURES_FREE : float
     FUTURES_IN_OERDER: int
     futures_open_orders = List[FuturesOrder] # Same Trading Pair
-
     liquidation_price = float
  
 
@@ -45,6 +44,11 @@ class Wallet:
             else:
                 futures_worth -= order.openning_amount/order.openning_price * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage
         return futures_worth
+
+    def spot_worth(self, trading_coin_value):
+        trading_coin_value = float(trading_coin_value)
+        return self.USDT_DISPO + self.COIN_DISPO * trading_coin_value 
+
 
     def sum_futures_amounts(self):
         futures_amounts = 0
@@ -126,6 +130,16 @@ class Wallet:
             return liq
 
 
+    def breakeaven(self , price , losses , entry_ammount_usdt , entry_price):
+        # profit  = losses
+        # amount * ( price - breakeeavenPrice ) = losses
+        # amount_usdt / entry_price * (price - breakeeavenPrice ) = losses
+        price =float(price)
+        losses =float(losses)
+        entry_ammount_usdt =float(entry_ammount_usdt)
+        entry_price = float(entry_price)
+
+        return price - losses * (entry_price / entry_ammount_usdt)
 
 
 

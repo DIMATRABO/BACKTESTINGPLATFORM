@@ -13,7 +13,8 @@ class Deal:
     pnl = float
     pnl_percentage = float
     is_a_winning_deal = bool
-    
+    spot_orders = list[SpotExecutedOrder]
+
 
 
 
@@ -27,7 +28,8 @@ class Deal:
             self.pnl = pnl
             self.pnl_percentage = pnl_percentage
             self.is_a_winning_deal = is_a_winning_deal
-            self.spot_orders = list[SpotExecutedOrder]
+            self.spot_orders = []
+    
 
     def close(self , closing_time, closing_price , closing_wallet_worth ):
             self.closing_time = closing_time

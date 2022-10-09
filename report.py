@@ -124,6 +124,8 @@ class Report:
         print("__openning wallet worth __ closing wallet worth _____PNL______PNL % _____is winnig_")
         for deal in agent.deals:
             print(deal.to_string())
+            for spotorder in deal : 
+                print(spotorder.to_string())
 
 
         #mpf.plot(df, type="candle",   title = f" Price",  style="yahoo"  , hlines=dict( hlines=[1633.8,1620],colors=['g','r'],linestyle='-.') ,addplot=apds )

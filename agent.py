@@ -2,6 +2,7 @@ from typing import List
 from openOrder import OpenOrder
 from deal import Deal
 from report import Report
+from spotExecutedOrder import SpotExecutedOrder
 class Agent:
     
     ordres : List[OpenOrder]
@@ -82,9 +83,38 @@ class Agent:
                     self.actions.append([order.openning_amount  , 1 if order.is_buy else -1 , True , order.is_future  , order.openning_price_low , order.leverage ])
                     self.ordres.remove(order)
 
+                    if not order.is_future : 
+                        executed =  SpotExecutedOrder(
+                            order.is_buy,
+                            state[0],
+                            order.openning_price_low,
+                            order.openning_amount,
+                            self.wallet.spot_worth(order.openning_price_low),
+                            self.wallet.breakeaven(order.openning_price_low , self.losses , self.FUTURES_ENTRY_AMOUNT_USDT ,  self.deals[len(self.deals)-1].openning_price))
+
+                        self.deals[len(self.deals)-1].spot_orders.append(executed)
+
+
+
+
                 if order.max_above_openning_high(state):
                     self.actions.append([order.openning_amount  , 1 if order.is_buy else -1 , True , order.is_future , order.openning_price_high , order.leverage ])
                     self.ordres.remove(order)
+
+                    if not order.is_future : 
+                        executed = SpotExecutedOrder(
+                            order.is_buy,
+                            state[0],
+                            order.openning_price_high,
+                            order.openning_amount,
+                            self.wallet.spot_worth(order.openning_price_high),
+                            self.wallet.breakeaven(order.openning_price_high ,
+                                                    self.losses ,
+                                                    self.FUTURES_ENTRY_AMOUNT_USDT ,
+                                                    self.deals[len(self.deals)-1].openning_price)
+                                                    )
+                    
+                        self.deals[len(self.deals)-1].spot_orders.append(executed)
 
 
             report.trace( f"closing deal price = {self.closing_deal_price } liquidation price = {self.liquidation} SPOT_ENTRY_PRICE = {self.SPOT_ENTRY_PRICE} SPOT_SELL_PRICE = {self.SPOT_SELL_PRICE}")
