@@ -90,7 +90,7 @@ class Agent:
                             order.openning_price_low,
                             order.openning_amount,
                             self.wallet.spot_worth(order.openning_price_low),
-                            self.wallet.breakeaven(order.openning_price_low , self.losses , self.FUTURES_ENTRY_AMOUNT_USDT ,  self.deals[len(self.deals)-1].openning_price))
+                            self.wallet.breakeaven( self.losses , self.FUTURES_ENTRY_AMOUNT_USDT ,  self.deals[len(self.deals)-1].openning_price))
 
                         self.deals[len(self.deals)-1].spot_orders.append(executed)
 
@@ -108,8 +108,7 @@ class Agent:
                             order.openning_price_high,
                             order.openning_amount,
                             self.wallet.spot_worth(order.openning_price_high),
-                            self.wallet.breakeaven(order.openning_price_high ,
-                                                    self.losses ,
+                            self.wallet.breakeaven( self.losses ,
                                                     self.FUTURES_ENTRY_AMOUNT_USDT ,
                                                     self.deals[len(self.deals)-1].openning_price)
                                                     )
@@ -117,16 +116,18 @@ class Agent:
                         self.deals[len(self.deals)-1].spot_orders.append(executed)
 
 
-            report.trace( f"closing deal price = {self.closing_deal_price } liquidation price = {self.liquidation} SPOT_ENTRY_PRICE = {self.SPOT_ENTRY_PRICE} SPOT_SELL_PRICE = {self.SPOT_SELL_PRICE}")
+            report.trace( f"closing deal price = {self.closing_deal_price } liquidation price = {self.liquidation} SPOT_ENTRY_PRICE = {self.SPOT_ENTRY_PRICE} SPOT_SELL_PRICE = {self.SPOT_SELL_PRICE}  Losses = {self.losses}")
 
             if float(state[3]) <= self.closing_deal_price :
                     #Take profit
                     self.deals[len(self.deals)-1].close(state[0], self.closing_deal_price,self.wallet.worth(self.closing_deal_price))
                     self.ordres.clear()
+                    self.losses = 0
                  
             if float(state[2]) >= self.liquidation :
                     self.deals[len(self.deals)-1].close(state[0], self.liquidation ,self.wallet.worth(self.liquidation))
                     self.ordres.clear()
+                    self.losses = 0
             
             if float(state[2]) >= self.SPOT_ENTRY_PRICE  and  not self.has_bougth : 
                     # if the price gos above the spot buying price we create order to sell at liquidation price and to sell at spot sell price 

@@ -1,3 +1,4 @@
+from socket import gaierror
 import mplfinance as mpf
 import pandas as pd
 from datetime import datetime
@@ -124,8 +125,13 @@ class Report:
         print("__openning wallet worth __ closing wallet worth _____PNL______PNL % _____is winnig_")
         for deal in agent.deals:
             print(deal.to_string())
-            for spotorder in deal : 
-                print(spotorder.to_string())
+            wolletworth_1 = 0
+            gain = 0
+            for spotorder in deal.spot_orders :
+                if  wolletworth_1 != 0 :
+                    gain = (spotorder.openning_wallet_worth - wolletworth_1)/wolletworth_1
+                print(spotorder.to_string() + f"----- delta= {round(gain,6)}%")
+                wolletworth_1 = spotorder.openning_wallet_worth 
 
 
         #mpf.plot(df, type="candle",   title = f" Price",  style="yahoo"  , hlines=dict( hlines=[1633.8,1620],colors=['g','r'],linestyle='-.') ,addplot=apds )

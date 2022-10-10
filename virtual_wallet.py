@@ -130,16 +130,15 @@ class Wallet:
             return liq
 
 
-    def breakeaven(self , price , losses , entry_ammount_usdt , entry_price):
-        # profit  = losses
-        # amount * ( price - breakeeavenPrice ) = losses
-        # amount_usdt / entry_price * (price - breakeeavenPrice ) = losses
-        price =float(price)
+    def breakeaven(self  , losses , entry_ammount_usdt , entry_price):
+        # breakeaven whene profit  = losses
+        # => amount * ( breakeeavenPrice - entry_price)/ entry_price = losses
+        #  => amount_usdt / entry_price * (breakeeavenPrice - entry_price)/entry_price = losses
         losses =float(losses)
         entry_ammount_usdt =float(entry_ammount_usdt)
         entry_price = float(entry_price)
 
-        return price - losses * (entry_price / entry_ammount_usdt)
+        return entry_price * (losses * (entry_price / entry_ammount_usdt) - 1) 
 
 
 
