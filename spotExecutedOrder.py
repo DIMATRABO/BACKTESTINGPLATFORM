@@ -17,4 +17,4 @@ class SpotExecutedOrder:
         self.breakeaven = breakeaven
 
     def to_string(self):
-        return f'    - {"buy" if self.is_buy else "sell"} -- at price { round(self.openning_price,3)} -- amount of {round(self.openning_amount,3)} --wollet worth{round(self.openning_wallet_worth,3)} --breakeaven at {round(self.breakeaven,3)} '
+        return f'    - {"buy" if self.is_buy else "sell"} -- at price { round(self.openning_price,3)} -- amount of {round(self.openning_amount,3)} --wollet worth = {round(self.openning_wallet_worth,3)} --breakeaven at {round(self.breakeaven,3)} '

@@ -55,6 +55,7 @@ class Market:
         date2=time2.strftime("%d %b, %Y %H:%M:%S")
         return self.binance_client.get_historical_klines(self.TRADING_PAIR, Client.KLINE_INTERVAL_1MINUTE,str(date1),str(date2))
 
+"""
 
     def price_at_time(self , t):
         a_minute_ago = int(t - 60)
@@ -69,3 +70,4 @@ class Market:
         time= datetime.fromtimestamp(t, tz=None)
         return time.strftime("%d %b, %Y %H:%M:%S")
 
+"""

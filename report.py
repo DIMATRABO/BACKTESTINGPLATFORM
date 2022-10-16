@@ -1,3 +1,4 @@
+from doctest import debug_script
 from socket import gaierror
 import mplfinance as mpf
 import pandas as pd
@@ -14,14 +15,19 @@ class Report:
     short_signals = []
     liquidation_signals=[]
 
-    def __init__(self , debug ):
+    def __init__(self , debug_level ):
         self.candles = []
         self.buy_signals = []
-        self.debug = debug
+        self.debug_level = debug_level
 
-    def trace(self ,message):
-        if self.debug:
+    def trace(self ,message , level):
+        if self.debug_level >= level :
             print(message)
+
+    def traceAction(self , action , level):
+        if self.debug_level >= level :
+            if len(action)>0:
+                 print(action)
 
 
     def signals(self,is_futures ,  buy_close_sell, price):
@@ -59,8 +65,9 @@ class Report:
 
     def add_candle(self , timestamp , state):
         time= datetime.fromtimestamp(timestamp, tz=None)
-        D = time.strftime("%Y-%m-%d %H:%M:%S")   
-        print(D) 
+        D = time.strftime("%Y-%m-%d %H:%M:%S")  
+        if self.debug_level >= 0: 
+            print(D) 
         candel = [D , float(state[1]) , float(state[2]) , float(state[3]) , float(state[4]) , float(state[5])]
         self.candles.append(candel)
 
@@ -93,7 +100,7 @@ class Report:
             apds.append(mpf.make_addplot(self.short_signals,type='scatter',markersize=100,marker='v' , color='violet'))
 
 
-        if self.debug:      
+        if self.debug_level>=1:      
             print("----- buy --------")
             print(self.buy_signals)
             print(len(self.buy_signals))

@@ -11,11 +11,12 @@ TIME_STEP = 1  * 60 # on minuts
 TRADING_PAIR="ETHUSDT"
 IS_VIRTUAL_ENV=True
 IS_HISTORICAL_DATA=True
-HISTO_START=1664437575 # timestap to start backtesting from
-HISTO_END = 1664474995 # timestap to stop backtestingmarket
+HISTO_START=1664423175 # timestap to start backtesting from
+HISTO_END = 1664460555 #
+
 CURRENT_TIME = HISTO_START
 USDT_DISPO = 40000
-COIN_DISPO = 0
+COIN_DISPO = 0  
 FUTURES_BUDGET = 4000#USDT
 
 SLIPPAGE = 0# %
@@ -27,15 +28,14 @@ SPOT_DESIRED_PROFIT = 10 # USDT
 
 
 
-SPOT_ENTRY_PRICE_percentage = 0.2
-SPOT_SELL_PRICE_percentage = 0.1
+SPOT_ENTRY_PRICE_percentage = 0.5
+SPOT_SELL_PRICE_percentage = 0.45
 
 profitable_percentage = 2.5 #% FUTURES 
 
-WALLET_EXCHANGE_FEE = 0.1 #USDT
+WALLET_EXCHANGE_FEE = 0.1 # % 
 
-debug = True
-
+debug_level = 1
 
 
 
@@ -46,21 +46,22 @@ debug = True
 def run_epoc( timestamp  , market , agent , wallet  ,report):
         
         state =  market.getState(timestamp, report)
-        report.trace(state)
+        report.trace(state,1)
         wallet.liquidation(state[3] , state[2] , report)
         agent.start_spot_wallet_worth_calc(state[1],wallet.USDT_DISPO , wallet.COIN_DISPO)
         actions = agent.action( state , report )
-        report.trace(actions)
+        report.traceAction(actions,1)
         market.execute(actions , timestamp , report)
 
         #report.plot(state , timestamp)
 
-        
+
+
+########################## Start ################################""     
 wallet=Wallet(TRADING_PAIR=TRADING_PAIR,USDT_DISPO=USDT_DISPO,COIN_DISPO=COIN_DISPO,FUTURES_FREE=FUTURES_BUDGET, SLIPPAGE=SLIPPAGE , FEES=WALLET_EXCHANGE_FEE )
 market=Market(TRADING_PAIR=TRADING_PAIR, wallet=wallet)
-agent=Agent(wallet = wallet, FUTURES_ENTRY_AMOUNT_USDT=FUTURES_ENTRY_AMOUNT_USDT , SPOT_DESIRED_PROFIT=SPOT_DESIRED_PROFIT , SPOT_ENTRY_PRICE_percentage=SPOT_ENTRY_PRICE_percentage , SPOT_SELL_PRICE_percentage= SPOT_SELL_PRICE_percentage , profitable_percentage = profitable_percentage , leverage=LEVERAGE)
-        
-report=Report(debug)
+agent=Agent(wallet = wallet, FUTURES_ENTRY_AMOUNT_USDT=FUTURES_ENTRY_AMOUNT_USDT , SPOT_DESIRED_PROFIT=SPOT_DESIRED_PROFIT , SPOT_ENTRY_PRICE_percentage=SPOT_ENTRY_PRICE_percentage , SPOT_SELL_PRICE_percentage= SPOT_SELL_PRICE_percentage , profitable_percentage = profitable_percentage , leverage=LEVERAGE)       
+report=Report(debug_level)
 
 
 if( IS_HISTORICAL_DATA ):

@@ -40,9 +40,9 @@ class Wallet:
         futures_worth = self.FUTURES_FREE
         for order in self.futures_open_orders:
             if order.is_long:
-                futures_worth += order.openning_amount/order.openning_price * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage
+                futures_worth += order.openning_amount * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage + order.openning_amount 
             else:
-                futures_worth -= order.openning_amount/order.openning_price * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage
+                futures_worth -= order.openning_amount * (  (float(trading_coin_value) - order.openning_price)/ order.openning_price ) * order.leverage - order.openning_amount
         return futures_worth
 
     def spot_worth(self, trading_coin_value):
@@ -58,7 +58,7 @@ class Wallet:
             else:
                 futures_amounts += order.openning_amount 
         return futures_amounts
-
+       
     
     
     def liquidation_price_calc(self):
@@ -93,21 +93,9 @@ class Wallet:
 
 
     def liquidation(self, trading_coin_value_min , trading_coin_value_max , Report):
-        """
-        if  self.FUTURES_IN_OERDER>0 and  self.pnl_percentage(trading_coin_value_min)<=-1 :
-            Report.trace("LIQUIDATED")
-            Report.signals(True , 0 ,self.liquidation_price)
-            self.futures_open_orders.clear()
-            self.FUTURES_IN_OERDER = 0
-
-        if  self.FUTURES_IN_OERDER>0 and self.pnl_percentage(trading_coin_value_max)<=-1 :
-            Report.trace("LIQUIDATED")
-            Report.signals( True , 0  , self.liquidation_price)
-            self.futures_open_orders.clear()
-            self.FUTURES_IN_OERDER = 0
-        """
+   
         if  self.FUTURES_IN_OERDER>0 and  self.liquidation_price <= float(trading_coin_value_max) :
-            Report.trace("LIQUIDATED")
+            Report.trace("LIQUIDATED" , 0)
             Report.signals(True , 0 ,self.liquidation_price)
             self.futures_open_orders.clear()
             self.FUTURES_IN_OERDER = 0
@@ -130,15 +118,14 @@ class Wallet:
             return liq
 
 
-    def breakeaven(self  , losses , entry_ammount_usdt , entry_price):
+    def breakeaven(self  , losses , entry_ammount_usdt , entry_price , leverage ):
         # breakeaven whene profit  = losses
-        # => amount * ( breakeeavenPrice - entry_price)/ entry_price = losses
-        #  => amount_usdt / entry_price * (breakeeavenPrice - entry_price)/entry_price = losses
+        # => amount * leverage * ( breakeeavenPrice - entry_price)/ entry_price = losses
+        #  => (amount_usdt / entry_price) * leverage * (breakeeavenPrice - entry_price)/entry_price = losses
         losses =float(losses)
         entry_ammount_usdt =float(entry_ammount_usdt)
         entry_price = float(entry_price)
-
-        return entry_price * (losses * (entry_price / entry_ammount_usdt) - 1) 
+        return entry_price * (losses * (entry_price / (leverage *entry_ammount_usdt )) + 1) 
 
 
 
@@ -146,28 +133,28 @@ class Wallet:
     def buy(self , amount , price , Report ):
         price = float(price)
         execution_price = price * ( 1 + random.randrange(-1, 1) * random.random() * self.SLIPPAGE )
-        if( self.USDT_DISPO > amount * execution_price + self.FEES ):
-            self.USDT_DISPO -= amount * execution_price + self.FEES
+        if (self.USDT_DISPO > amount * execution_price*( 1 + self.FEES) ):
+            self.USDT_DISPO -= amount * execution_price * (1 + self.FEES)
             self.COIN_DISPO += amount
-            Report.trace(f"buying -- wallet state =  usdt : {self.USDT_DISPO}, coin:{self.COIN_DISPO}")
+            Report.trace(f"buying -- wallet state =  usdt : {self.USDT_DISPO}, coin:{self.COIN_DISPO}" , 0)
             Report.signals(False , 1 , price)
             return execution_price
         else:
-           Report.trace("insufficient balance")
+           Report.trace("insufficient balance",0)
            return -1
         
 
     def sell(self ,  amount , price , Report):
         price = float(price)
         execution_price = price * ( 1 + random.randrange(-1, 1) * random.random() * self.SLIPPAGE )
-        if( self.COIN_DISPO > amount):
-            self.USDT_DISPO += amount * execution_price - self.FEES
+        if( self.COIN_DISPO >= amount):
+            self.USDT_DISPO += amount * execution_price * ( 1 - self.FEES)
             self.COIN_DISPO -= amount
-            Report.trace(f"selling -- wallet state =  usdt : {self.USDT_DISPO}, coin:{self.COIN_DISPO}")  
+            Report.trace(f"selling -- wallet state =  usdt : {self.USDT_DISPO}, coin:{self.COIN_DISPO}",0) 
             Report.signals(False , -1  ,  price)
             return execution_price          
         else:
-            Report.trace("insufficient balance")
+            Report.trace("insufficient balance",0)
             return -1
         
 
@@ -175,54 +162,42 @@ class Wallet:
     def long(self , amount_usdt , price , leverage , Report):
         price = float(price)
         execution_price = price * ( 1 + random.randrange(-1, 1) *  random.random() * self.SLIPPAGE )
-        if( self.sum_futures_amounts() >= amount_usdt + self.FEES):
+        if( self.sum_futures_amounts() >= amount_usdt * (1 + self.FEES)):
             self.FUTURES_FREE += self.futures_worth(price)
             for f_order in self.futures_open_orders:
                 if not f_order.is_long:
                     self.futures_open_orders.remove(f_order)
             self.FUTURES_IN_OERDER -= 1
-            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price_calc()} ---> {self.liquidation_price}")  
+            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER}",0)  
             Report.signals(True , 1 , price)
             return execution_price 
 
-        elif( self.FUTURES_FREE >= amount_usdt + self.FEES):
+        elif( self.FUTURES_FREE >= amount_usdt * (1 + self.FEES)):
             self.futures_open_orders.append( FuturesOrder(True , True , execution_price , amount_usdt , leverage=leverage ))
-            self.FUTURES_FREE -= amount_usdt + self.FEES
+            self.FUTURES_FREE -= amount_usdt * (1+ self.FEES)
             self.FUTURES_IN_OERDER += 1
-            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price_calc()} ---> {self.liquidation_price}")  
+            Report.trace(f"long -- futures wallet open orders = {self.FUTURES_IN_OERDER}",0) 
             Report.signals(True , 1 , price)
             return execution_price          
         else:
-            Report.trace("insufficient balance")
+            Report.trace("insufficient balance",0)
             return -1
         
 
     def short(self , amount_usdt , price , leverage , Report):
         price = float(price)
         execution_price = price * ( 1 + random.randrange(-1, 1) *  random.random() * self.SLIPPAGE )
-        if( self.FUTURES_FREE >= amount_usdt + self.FEES):
+        if( self.FUTURES_FREE >= amount_usdt * (1+ self.FEES)):
             self.futures_open_orders.append( FuturesOrder(False , True , execution_price , amount_usdt , leverage=leverage ))
-            self.FUTURES_FREE -= amount_usdt  + self.FEES
+            self.FUTURES_FREE -= amount_usdt *(1 + self.FEES)
             self.FUTURES_IN_OERDER += 1
-            Report.trace(f"short -- futures wallet open orders = {self.FUTURES_IN_OERDER} liquidation price {self.liquidation_price_calc()} ---> {self.liquidation_price}")  
+            Report.trace(f"short -- futures wallet open orders = {self.FUTURES_IN_OERDER}",0)  
             Report.signals( True , -1 , price)
             return execution_price          
         else:
-            Report.trace("insufficient balance")
+            Report.trace("insufficient balance",0)
             return -1
         
-    def close_all_open_order(self  , price , Report):
-        price = float(price)
-        execution_price = price * ( 1 + random.randrange(-1, 1) *  random.random() * self.SLIPPAGE )
-        worth = self.futures_worth(execution_price)
-        self.futures_open_orders.clear()
-        self.FUTURES_FREE += worth - self.FEES
-        self.FUTURES_IN_OERDER = 0
-        Report.trace("Futures orders closed")
-        Report.signals(True , 0  , price)
-
-
-
    
 
 

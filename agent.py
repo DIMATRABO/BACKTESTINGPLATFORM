@@ -74,6 +74,7 @@ class Agent:
 
     def action(self , state ,report ):
         self.actions = []
+        has_executed_a_spot_action = False 
      
        
         if len(self.deals) > 0 and self.deals[len(self.deals)-1].closing_time is None:
@@ -90,7 +91,10 @@ class Agent:
                             order.openning_price_low,
                             order.openning_amount,
                             self.wallet.spot_worth(order.openning_price_low),
-                            self.wallet.breakeaven( self.losses , self.FUTURES_ENTRY_AMOUNT_USDT ,  self.deals[len(self.deals)-1].openning_price))
+                            self.wallet.breakeaven( self.losses , 
+                                                    self.FUTURES_ENTRY_AMOUNT_USDT ,
+                                                    self.deals[len(self.deals)-1].openning_price,
+                                                    self.leverage))
 
                         self.deals[len(self.deals)-1].spot_orders.append(executed)
 
@@ -110,20 +114,22 @@ class Agent:
                             self.wallet.spot_worth(order.openning_price_high),
                             self.wallet.breakeaven( self.losses ,
                                                     self.FUTURES_ENTRY_AMOUNT_USDT ,
-                                                    self.deals[len(self.deals)-1].openning_price)
+                                                    self.deals[len(self.deals)-1].openning_price,
+                                                    self.leverage)
                                                     )
                     
                         self.deals[len(self.deals)-1].spot_orders.append(executed)
 
 
-            report.trace( f"closing deal price = {self.closing_deal_price } liquidation price = {self.liquidation} SPOT_ENTRY_PRICE = {self.SPOT_ENTRY_PRICE} SPOT_SELL_PRICE = {self.SPOT_SELL_PRICE}  Losses = {self.losses}")
+            report.trace( f"closing deal price = {self.closing_deal_price } liquidation price = {self.liquidation} SPOT_ENTRY_PRICE = {self.SPOT_ENTRY_PRICE} SPOT_SELL_PRICE = {self.SPOT_SELL_PRICE}  Losses = {self.losses}" , 1)
 
+            # state[3] = min of the candle
             if float(state[3]) <= self.closing_deal_price :
                     #Take profit
                     self.deals[len(self.deals)-1].close(state[0], self.closing_deal_price,self.wallet.worth(self.closing_deal_price))
                     self.ordres.clear()
                     self.losses = 0
-                 
+            # state[2] = min of the candle   
             if float(state[2]) >= self.liquidation :
                     self.deals[len(self.deals)-1].close(state[0], self.liquidation ,self.wallet.worth(self.liquidation))
                     self.ordres.clear()
@@ -140,14 +146,16 @@ class Agent:
                     self.ordres.append( OpenOrder(False , False , self.liquidation , None , self.SPOT_ENTRY_AMOUNT , 1))
                     self.ordres.append( OpenOrder(False , False ,  None , self.SPOT_SELL_PRICE , self.SPOT_ENTRY_AMOUNT , 1))
 
-            if float(state[3]) <= self.SPOT_SELL_PRICE  and  self.has_bougth : 
+                    has_executed_a_spot_action = True
+
+            if float(state[3]) <= self.SPOT_SELL_PRICE  and  self.has_bougth  and not has_executed_a_spot_action: 
                     # if the price gos bellow the spot selling price we create order to buy at spot buy price with higher ammount
                     self.has_bougth = False
                     for order in self.ordres:
                         if order.openning_price_high == self.liquidation:
                             self.ordres.remove(order)
                             
-                    self.losses -= ( self.SPOT_ENTRY_AMOUNT * ( self.SPOT_SELL_PRICE - self.SPOT_ENTRY_PRICE)/self.SPOT_ENTRY_PRICE )- self.wallet.FEES
+                    self.losses += ( self.SPOT_ENTRY_AMOUNT * ( self.SPOT_ENTRY_PRICE - self.SPOT_SELL_PRICE) ) + self.wallet.FEES * self.SPOT_ENTRY_AMOUNT * self.SPOT_ENTRY_PRICE
 
                     # recalculate the spot entry ammount 
                     self.spotEntryAmountCalc()
@@ -158,10 +166,11 @@ class Agent:
                      
 
         else:
-            # if there is no short order we create one 
+            # if there is no short order we create one state[4] = closing price of the candle 
             # actions = [(ammount ,  sell_hold_buy (-1,0,1) , is_market , is_futures , limit , leverage),(ammount ,   sell_hold_buy (-1,0,1) , is_market , is_futures , limit , leverage)]   
             self.actions.append([self.FUTURES_ENTRY_AMOUNT_USDT , -1  , True , True , state[4], self.leverage])
             self.liquidation = self.wallet.liquidation_price_price(False, state[4] , self.leverage , 0)
+            # we create a new deal with no closing time = None  means it's still open 
             self.deals.append(Deal(state[0],state[4],self.wallet.worth(state[4]),None , None , None , None , None , False))
 
             # SPOT_ENTRY_PRICE_percentage should be between 0 and 1 
@@ -200,9 +209,13 @@ class Agent:
         desired_profit = self.SPOT_DESIRED_PROFIT  
         Futures_EA = self.FUTURES_ENTRY_AMOUNT_USDT 
         fees = self.losses
+
+
         # x = Futures_EA/(DProfit+fees*(LiqP/Futures_EA)     
         x = Futures_EA/(desired_profit + fees*(liquidation / Futures_EA))
+
         self.SPOT_ENTRY_AMOUNT = x
+
         return x
         
 
