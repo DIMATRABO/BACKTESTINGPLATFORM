@@ -10,12 +10,11 @@ class Market:
     TRADING_PAIR:str    
 
 
-
-    def __init__(self, TRADING_PAIR, wallet):
+def __init__(self, TRADING_PAIR, wallet):
         # load existing env or create new one 
         self.TRADING_PAIR=TRADING_PAIR
-        self.api_key="nmoso94nqqYndFWFKfyy0ZvsM0KexhvmrFCjmIboH1M15CYXpR8Qm0btrVKJbaj6"
-        self.api_secret="zCILQLgeVkrUn3z9iBJ8RT4zrb07xfo561E7TmKkbHrvlsrYxnEw54FUYeoFkfA8"
+        self.api_key=""
+        self.api_secret=""
         self.binance_client = Client(self.api_key, self.api_secret , tld='us')
         self.wallet=wallet
 
